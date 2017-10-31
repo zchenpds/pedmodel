@@ -3,43 +3,64 @@
 Author: Mfahad
 """
 import numpy as np
+import pandas as pd
 import math
 
 class Pedestrian():
-    def __init__(self,ID,x_pos,y_pos,z_height,vel,ang_mo,ang_fc,ts):
-        self.ID = ID
-        self.points = np.array([[x_pos,y_pos]]) # position
-        self.points_px = np.array([[int((x_pos - (-1*60000))/50) , int((20000 - (y_pos))/50)]])
-        self.x = int((x_pos - (-1*60000))/50)
-        self.y = int((20000 - (y_pos))/50)
-        self.z_height = np.array([z_height])
-        ped_wid = int(round(self.z_height/(50*pow(1.61,3))))
-        self.pix_w = ((ped_wid%2==0)*(ped_wid/2))+((ped_wid%2==1)*((ped_wid+1)/2))
-        self.pix_h = ((self.pix_w%2==0)*(self.pix_w/2))+((self.pix_w%2==1)*((self.pix_w+1)/2))
-        self.vel = np.array([vel])
-        self.ang_mo = np.array([ang_mo])
-        self.ang_fc = np.array([ang_fc])
-        self.ts = np.array([ts])
-        self.ct = 1
-        self.updated = 0
+    def __init__(self, dataEntry: pd.DataFrame, scene):
+        self.radius = 200 # pedestrian radius
+        self._scene = scene
+        self._update(dataEntry)
+        self.pedList = scene.pedList
         
-    def add_point(self,x_pos,y_pos,z_height,vel,ang_mo,ang_fc,ts):
-        self.points = np.concatenate((self.points,[[x_pos,y_pos]]),axis=0)
-        self.points_px = np.concatenate((self.points_px,[[int((x_pos - (-1*60000))/50) , int((20000 - (y_pos))/50)]]),axis=0)
-        self.x = int((x_pos - (-1*60000))/50)
-        self.y = int((20000 - (y_pos))/50)
-        self.z_height = np.concatenate((self.z_height,[z_height]),axis=0)
-        self.vel = np.concatenate((self.vel,[vel]),axis=0)
-        self.ang_mo = np.concatenate((self.ang_mo,[ang_mo]),axis=0)
-        self.ang_fc = np.concatenate((self.ang_fc,[ang_fc]),axis=0)
-        self.ts = np.concatenate((self.ts,[ts]),axis=0)
-        self.ct = self.ct+1
-        self.updated = 1
+    def update(self, dataEntry: pd.DataFrame):
+        self._update(dataEntry)
         
-    def degrees(self):
-        if(self.ang_mo[-1]>0):
-            ang1 = round(math.degrees(self.ang_mo[-1]))
+    def calculate(self):
+        ''' 
+        To-dos:
+            2. Feature calculation
+        '''
+        # Update current time
+        self.time = self.data.loc[0, 'time_stamp']
+        # Loop over other pedestrians
+        for id, other in self.pedList.items():
+            if self.id == id:
+                continue
+            #print(np.linalg.norm(self.pos - other.pos))
+            
+    def _update(self, dataEntry: pd.DataFrame):
+        ''' Update attributes when self.data changes
+        '''
+        self.data = dataEntry
+        self.id = self.data.loc[0, 'ped_id']
+        # Update current position
+        self.pos = np.array([self.data.loc[0, 'x'],
+                              self.data.loc[0, 'y']])
+        print(self.pos)
+        # Update trajectories， each denoted by an n-by-2 array
+        if hasattr(self, 'points'):
+            self.points = np.concatenate((self.points, self.pos), axis = 0)
         else:
-            ang1 = 360-round(math.degrees(abs(self.ang_mo[-1])))
-        ang1 = ang1+90 
-        return ang1    
+            self.points = self.pos
+        # Update other states of the pedestrian
+        self.zHeight = self.data.loc[0, 'z']
+        self.vel = self.data.loc[0, 'vel']
+        self.angM = self.data.loc[0, 'ang_m']
+        self.angF = self.data.loc[0, 'ang_f']
+        
+        # Update properties for visualization
+        self._xPix = int(self.x() / 50)
+        self._yPix = int(self.y() / 50)
+        self._rPix = int(self.radius/50)
+        
+    
+    def x(self):
+        return self.pos[0]
+    
+    def y(self):
+        return self.pos[1]
+    
+    
+class Features():
+    pass

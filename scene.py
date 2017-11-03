@@ -112,8 +112,8 @@ class Scene():
         dataEntry = pd.read_csv(self._csvFileName, 
                                           names = self._headers, 
                                           skiprows = self._ind, nrows = 1)
-        self._time = dataEntry['time_stamp'][0]
-        print('Time: ' + str(self._time) + 's')
+        self.time = dataEntry['time_stamp'][0]
+        print('Time: ' + str(self.time) + 's')
         
         # Loop over rows of data from the csv file
         pedNum = 0 # Num of peds in this frame
@@ -152,7 +152,7 @@ class Scene():
             # Calculate features
             ped.calculate()
             # Delete those pedestrians who haven't been updated for too long
-            if self._time - ped.time > 3:
+            if self.lag > 3:
                 del self.pedList[id]
         
         # Determine return value

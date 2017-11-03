@@ -3,8 +3,7 @@
 Author: Mfahad
 """
 import numpy as np
-import pandas as pd
-import math
+from interpolated_trajectory import Interpolated
 
 class Pedestrian():
     def __init__(self, dataEntry, scene):
@@ -12,6 +11,9 @@ class Pedestrian():
         self._scene = scene
         self._update(dataEntry)
         self.pedList = scene.pedList
+        self.inter_traj = np.array([])
+        self.inter_traj.shape=(0,2)
+
         
     def update(self, dataEntry):
         self._update(dataEntry)
@@ -21,6 +23,12 @@ class Pedestrian():
         To-dos:
             2. Feature calculation
         '''
+        
+        '''
+        Calculate pixels to next pixel
+        '''
+
+        
         # Update current time
         self.time = self.data.loc[0, 'time_stamp']
         # Loop over other pedestrians
@@ -35,12 +43,25 @@ class Pedestrian():
         self.data = dataEntry
         self.id = self.data.loc[0, 'ped_id']
         # Update current position
-        self.pos = np.array([self.data.loc[0, 'x'],
-                              self.data.loc[0, 'y']])
-        print(self.pos)
-        # Update trajectories, each denoted by an n-by-2 array
+
+        self.pos = np.array([[self.data.loc[0, 'x'],
+                             self.data.loc[0, 'y']]])
+        # Update properties for visualization
+        self._xPix = int(self.x() / 50)
+        self._yPix = int(self.y() / 50)
+        self._rPix = int(self.radius/50)
+        
+        print(self.pos.shape)
+        # Update trajectories, each denoted by an n-by-2 array and generate interpolated trajectory
         if hasattr(self, 'points'):
             self.points = np.concatenate((self.points, self.pos), axis = 0)
+            self.inter_traj = np.concatenate((self.inter_traj, np.array([[self._xPix,
+                             self._yPix]])), axis = 0)
+
+            #print self.inter_traj.shape
+            #interploate the trajectory between last position and current position
+            #self.inter_traj = np.concatenate(Interpolated(self.inter_traj[len(self.inter_traj)-2],self.inter_traj[len(self.inter_traj)-2]
+            #,self.inter_traj[len(self.inter_traj)-1],self.inter_traj[len(self.inter_traj)-1]))
         else:
             self.points = self.pos
         # Update other states of the pedestrian
@@ -49,18 +70,16 @@ class Pedestrian():
         self.angM = self.data.loc[0, 'ang_m']
         self.angF = self.data.loc[0, 'ang_f']
         
-        # Update properties for visualization
-        self._xPix = int(self.x() / 50)
-        self._yPix = int(self.y() / 50)
-        self._rPix = int(self.radius/50)
+
         
     
     def x(self):
-        return self.pos[0]
+        return self.pos[0][0]
     
     def y(self):
-        return self.pos[1]
+        return self.pos[0][1]
     
     
 class Features():
     pass
+

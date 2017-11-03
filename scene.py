@@ -62,19 +62,19 @@ class Scene():
         pts2 = np.float32([[0, 0], [self._wRoi, 0], [0, self._hRoi]])
         self._M = cv2.getAffineTransform(pts1, pts2) # affine transform
         
-    def _pix2mm(self, p: np.ndarray):
+    def _pix2mm(self, p):
         x, y = tuple(p[0])
         x = x*50 - 60000
         y = 20000 - y*50
         return np.float32([[x, y]])
     
-    def _mm2pix(self, p: np.ndarray):
+    def _mm2pix(self, p):
         x, y = tuple(p[0])
         x = (x + 60000) / 50
         y = (20000 - y) / 50
         return np.float32([[x, y]])
     
-    def _transformAndCrop(self, dataEntry: pd.DataFrame):
+    def _transformAndCrop(self, dataEntry):
         ''' Can only handle the first row of a dataFrame
         '''
         if self._M is None:
@@ -94,13 +94,13 @@ class Scene():
             return False # indicates this pedestrian is out of ROI
         
         
-    def addMap(self, fileName: str):
+    def addMap(self, fileName):
         """ specify the path to an image file as the scene map
         """
         self._img = cv2.imread(fileName, -1)
             
         
-    def openCsv(self, fileName: str):
+    def openCsv(self, fileName):
         """ specify the path to a csv file where pedestrian data is stored.
         """
         self._csvFileName = fileName

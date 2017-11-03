@@ -7,13 +7,13 @@ import pandas as pd
 import math
 
 class Pedestrian():
-    def __init__(self, dataEntry: pd.DataFrame, scene):
+    def __init__(self, dataEntry, scene):
         self.radius = 200 # pedestrian radius
         self._scene = scene
         self._update(dataEntry)
         self.pedList = scene.pedList
         
-    def update(self, dataEntry: pd.DataFrame):
+    def update(self, dataEntry):
         self._update(dataEntry)
         
     def calculate(self):
@@ -29,7 +29,7 @@ class Pedestrian():
                 continue
             #print(np.linalg.norm(self.pos - other.pos))
             
-    def _update(self, dataEntry: pd.DataFrame):
+    def _update(self, dataEntry):
         ''' Update attributes when self.data changes
         '''
         self.data = dataEntry
@@ -38,7 +38,7 @@ class Pedestrian():
         self.pos = np.array([self.data.loc[0, 'x'],
                               self.data.loc[0, 'y']])
         print(self.pos)
-        # Update trajectories， each denoted by an n-by-2 array
+        # Update trajectories, each denoted by an n-by-2 array
         if hasattr(self, 'points'):
             self.points = np.concatenate((self.points, self.pos), axis = 0)
         else:

@@ -6,3 +6,9 @@ To install opencv, run Anaconda Prompt as administrator. Then execute the follow
 ```
 conda install -c conda-forge opencv
 ```
+
+Dependencies:
+
+1. Bresenham Module
+
+https://pypi.python.org/pypi/bresenham

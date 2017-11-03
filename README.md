@@ -11,8 +11,6 @@ To install bresenham, run
 python -m pip install bresenham
 ```
 
-Dependencies:
-
-1. Bresenham Module
-
-https://pypi.python.org/pypi/bresenham
+## Dependencies:
+1. OpenCV
+1. Bresenham Module (https://pypi.python.org/pypi/bresenham)

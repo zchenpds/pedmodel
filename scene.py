@@ -19,7 +19,7 @@ class Scene():
         self._timestep = 0
         self._headers = ["time_stamp","ped_id","x","y","z","vel","ang_m","ang_f"]
         # ped_list
-        self.pedList = dict()
+        self.peds = dict()
         self._img = None
         self._M = None # affine transform in millimeters
         self._wRoi = None # ROI width in millimeters
@@ -117,18 +117,24 @@ class Scene():
         
         # Loop over rows of data from the csv file
         pedNum = 0 # Num of peds in this frame
+        curPeds = dict() # List of peds in this frame
         while True:
-            # add the new entry to pedList
+            # add the new entry to curPeds
             id = dataEntry['ped_id'][0]
-            # If this pedestrian is in the ROI, record it
-            if self._transformAndCrop(dataEntry):
-                if id in self.pedList:
-                    # This pedestrian already exists in pedList, so update it
-                    self.pedList[id].update(dataEntry)
-                else:
-                    # Otherwise, a new pedestrian needs to be constructed
-                    self.pedList[id] = Pedestrian(dataEntry, self)
-                pedNum = pedNum + 1
+            timestep = self.getTimestep()
+            # Check if this pedestrian is in the ROI
+            # In _transformAndCrop, dataEntry will be changed
+            isInRoi = self._transformAndCrop(dataEntry) #########################
+            if id in self.peds:
+                # This pedestrian already exists in peds, so update it
+                self.peds[id].update(dataEntry)
+                self.peds[id].states[timestep]._isInRoi = isInRoi
+            else:
+                # Otherwise, a new pedestrian needs to be constructed
+                self.peds[id] = Pedestrian(dataEntry, self)
+                self.peds[id].states[timestep]._isInRoi = isInRoi
+            pedNum = pedNum + 1
+            curPeds[id] = self.peds[id]
             dataEntry_1 = dataEntry
             
             # read the next row
@@ -146,14 +152,15 @@ class Scene():
         if pedNum > 0:
             print('Num of peds: ' + str(pedNum))
             
-        # Loop over all pedestrians in pedList
-        for id in list(self.pedList):
-            ped = self.pedList[id]
+        # Loop over all pedestrians in peds
+        for id in list(self.peds):
+            ped = self.peds[id]
             # Calculate features
-            ped.calculate()
-            # Delete those pedestrians who haven't been updated for too long
-            if self.lag > 3:
-                del self.pedList[id]
+            ped.calculate(curPeds)
+            # Delete those pedestrians that haven't been updated for too long
+            if ped.lag > 3:
+                del self.peds[id]
+                print('deleting old pedestrians')
         
         # Determine return value
         if dataEntry.empty:
@@ -165,7 +172,7 @@ class Scene():
         ''' Create an image object to visualize what's going on.
         '''
         img2 = self._img.copy()
-        for id, ped in self.pedList.items():
+        for id, ped in self.peds.items():
             cv2.circle(img2, center = (ped._xPix, ped._yPix), radius = ped._rPix,
                        color = (0, 255, 0), thickness = -1)
         cv2.imshow('image',img2)
@@ -175,6 +182,8 @@ class Scene():
         
     def deallocate(self):
         cv2.destroyAllWindows() # Add this to fix the window freezing bug
-
+    
+    def getTimestep(self):
+        return self._timestep
         
         

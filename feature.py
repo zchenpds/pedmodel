@@ -1,10 +1,11 @@
+
+from state import State
+
 class Feature():
-    def __init__(self, ped):
-        ''' construct the feature vector associated with a ped
+    def __init__(self, state, timestep):
+        ''' construct the feature vector from a state object
+        state: self state
         '''
-        # Loop over other pedestrians
-        for id, other in ped.pedList.items():
-            if ped.id == id:
-                continue
-            if ped.time = oth
-        self.data = ped.self()
+        pos = state.pos
+        for id, neighborState in state.getNeighborStates:
+            neighborPos = neighborState.pos

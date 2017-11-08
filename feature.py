@@ -7,5 +7,5 @@ class Feature():
         state: self state
         '''
         pos = state.pos
-        for id, neighborState in state.getNeighborStates:
+        for id, neighborState in state.neighborStates.items():
             neighborPos = neighborState.pos

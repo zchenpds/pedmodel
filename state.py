@@ -7,11 +7,12 @@ Created on Mon Nov  6 15:01:53 2017
 import numpy as np
 
 class State:
-    def __init__(self, dataEntry, timestep):
+    def __init__(self, dataEntry, ped):
         ''' Constructor
         '''
         self.data = dataEntry # not in use for now
-        self._timestep = timestep
+        self._timestep = ped._scene.getTimestep()
+        self.time = ped._scene.time
         self.id = dataEntry.loc[0, 'ped_id']
         # Update current position
         self.pos = np.array([[self.data.loc[0, 'x'],
@@ -30,4 +31,20 @@ class State:
         del neighbors[self.id]
         self._neighbors = neighbors
         # To-do: update neighborStates
+        for id, neighbor in neighbors.items():
+            self.neighborStates[id] = neighbor.states[self._timestep]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     

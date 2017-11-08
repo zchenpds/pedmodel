@@ -16,7 +16,7 @@ class Scene():
         """ Initializer
         """
         self._ind = 0
-        self._timestep = 0
+        self._timestep = -1 # indicating that no data is available yet
         self._headers = ["time_stamp","ped_id","x","y","z","vel","ang_m","ang_f"]
         # ped_list
         self.peds = dict()
@@ -26,7 +26,7 @@ class Scene():
         self._hRoi = None # ROI height in millimeters
         
     def setRoi(self, oPix, wPix, hPix, deg, show = False):
-        ''' Set region of interest to a square one
+        ''' Set region of interest to a rectagular one
         oPix: a 2-tuple denoting the origin (in pixels)
         wPix: a scalar denoting width (in pixels)
         hPix: a scalar denoting height (in pixels)
@@ -43,6 +43,10 @@ class Scene():
             p3Pix = oPix + vec1 * wPix + vec2 * hPix # for debug
             cv2.line(self._img, tuple(oPix[0]), tuple(p3Pix[0]), (0, 0, 255))
             cv2.line(self._img, tuple(p1Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._img, tuple(oPix[0]), tuple(p1Pix[0]), (0, 0, 255))
+            cv2.line(self._img, tuple(oPix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._img, tuple(p3Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._img, tuple(p3Pix[0]), tuple(p1Pix[0]), (0, 0, 255))
             cv2.imshow('img', self._img)
         pts1 = np.concatenate((oPix, p1Pix, p2Pix))
         pts2 = np.float32([[0, 0], [wPix, 0], [0, hPix]])
@@ -108,11 +112,17 @@ class Scene():
     def readNextFrame(self):
         """ read in pedestrian data of the next time step.
         """
+        self._timestep = self._timestep + 1
+        timestep = self._timestep
         # read in one row of data
         dataEntry = pd.read_csv(self._csvFileName, 
                                           names = self._headers, 
                                           skiprows = self._ind, nrows = 1)
-        self.time = dataEntry['time_stamp'][0]
+        if timestep == 0:
+            self.timebase = dataEntry['time_stamp'][0]
+        
+        # self.time is relative to the first timestamp in csv
+        self.time = dataEntry['time_stamp'][0] - self.timebase
         print('Time: ' + str(self.time) + 's')
         
         # Loop over rows of data from the csv file
@@ -121,7 +131,6 @@ class Scene():
         while True:
             # add the new entry to curPeds
             id = dataEntry['ped_id'][0]
-            timestep = self.getTimestep()
             # Check if this pedestrian is in the ROI
             # In _transformAndCrop, dataEntry will be changed
             isInRoi = self._transformAndCrop(dataEntry) #########################
@@ -133,8 +142,10 @@ class Scene():
                 # Otherwise, a new pedestrian needs to be constructed
                 self.peds[id] = Pedestrian(dataEntry, self)
                 self.peds[id].states[timestep]._isInRoi = isInRoi
-            pedNum = pedNum + 1
+            
             curPeds[id] = self.peds[id]
+            
+            pedNum = pedNum + 1
             dataEntry_1 = dataEntry
             
             # read the next row
@@ -147,20 +158,15 @@ class Scene():
                 break
             # If the next row has a different timestamp, jump out of the loop
             if dataEntry_1.values[0, 0] != dataEntry.values[0, 0]:
-                self._timestep = self._timestep + 1
                 break
         if pedNum > 0:
             print('Num of peds: ' + str(pedNum))
-            
+        
         # Loop over all pedestrians in peds
-        for id in list(self.peds):
+        for id in list(curPeds):
             ped = self.peds[id]
             # Calculate features
             ped.calculate(curPeds)
-            # Delete those pedestrians that haven't been updated for too long
-            if ped.lag > 3:
-                del self.peds[id]
-                print('deleting old pedestrians')
         
         # Determine return value
         if dataEntry.empty:
@@ -183,7 +189,7 @@ class Scene():
     def deallocate(self):
         cv2.destroyAllWindows() # Add this to fix the window freezing bug
     
-    def getTimestep(self):
+    def getTimestep(self): # depreciated
         return self._timestep
         
         

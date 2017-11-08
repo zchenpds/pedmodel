@@ -36,7 +36,7 @@ class Pedestrian():
         '''
         
         # Update current time
-        self.time = self.data.loc[0, 'time_stamp']
+        self.time = self._scene.time
         self.lag = self._scene.time - self.time
         print(self.lag)
         
@@ -58,7 +58,7 @@ class Pedestrian():
         
         # Update states
         timestep = self._scene.getTimestep()
-        self.states[timestep] = State(dataEntry, timestep)
+        self.states[timestep] = State(dataEntry, self)
         
         # Update current position # obsolete
         self.pos = np.array([[dataEntry.loc[0, 'x'], # obsolete
@@ -72,11 +72,11 @@ class Pedestrian():
         self._rPix = int(self.radius/50)
         
         # Update trajectories, each denoted by an n-by-2 array 
-        self.points = np.concatenate((self.points, self.pos), axis = 0) 
+        # self.points = np.concatenate((self.points, self.pos), axis = 0) 
         
         # Generate interpolated trajectory
-        self.inter_traj = np.concatenate((self.inter_traj, np.array([[self._xPix,
-                         self._yPix]])), axis = 0)
+        #self.inter_traj = np.concatenate((self.inter_traj, np.array([[self._xPix,
+        #                self._yPix]])), axis = 0)
 
         #print self.inter_traj.shape
         #interploate the trajectory between last position and current position

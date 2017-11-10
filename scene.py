@@ -9,6 +9,8 @@ import cv2
 import pandas as pd
 import numpy as np
 import math
+from collections import OrderedDict
+
 from pedestrian import Pedestrian
 
 class Scene():
@@ -20,10 +22,15 @@ class Scene():
         self._headers = ["time_stamp","ped_id","x","y","z","vel","ang_m","ang_f"]
         # ped_list
         self.peds = dict()
-        self._img = None
+        self.pedList = OrderedDict()
+        self._imageIn = None
+        self._imageOut = None
         self._M = None # affine transform in millimeters
         self._wRoi = None # ROI width in millimeters
         self._hRoi = None # ROI height in millimeters
+        
+        # Exit handler (This fixes the window freezing bug)
+        # atexit.register(self.deallocate)
         
     def setRoi(self, oPix, wPix, hPix, deg, show = False):
         ''' Set region of interest to a rectagular one
@@ -41,20 +48,20 @@ class Scene():
         p2Pix = oPix + vec2 * hPix
         if show:
             p3Pix = oPix + vec1 * wPix + vec2 * hPix # for debug
-            cv2.line(self._img, tuple(oPix[0]), tuple(p3Pix[0]), (0, 0, 255))
-            cv2.line(self._img, tuple(p1Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._img, tuple(oPix[0]), tuple(p1Pix[0]), (0, 0, 255))
-            cv2.line(self._img, tuple(oPix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._img, tuple(p3Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._img, tuple(p3Pix[0]), tuple(p1Pix[0]), (0, 0, 255))
-            cv2.imshow('img', self._img)
+            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p3Pix[0]), (0, 0, 255))
+            cv2.line(self._imageIn, tuple(p1Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p1Pix[0]), (0, 0, 255))
+            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
+            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p1Pix[0]), (0, 0, 255))
+            cv2.imshow('img', self._imageIn)
         pts1 = np.concatenate((oPix, p1Pix, p2Pix))
         pts2 = np.float32([[0, 0], [wPix, 0], [0, hPix]])
         M = cv2.getAffineTransform(pts1, pts2) 
-        cols, rows, ch = self._img.shape
-        img2 = cv2.warpAffine(self._img, M, (cols,rows))
+        cols, rows, ch = self._imageIn.shape
+        img2 = cv2.warpAffine(self._imageIn, M, (cols,rows))
         # Crop scene image
-        self._img = img2[0:hPix, 0:wPix] 
+        self._imageIn = img2[0:hPix, 0:wPix] 
         
         # Find the affine transform for csv data (in millimeters)
         self._wRoi = wPix*50
@@ -101,7 +108,7 @@ class Scene():
     def addMap(self, fileName):
         """ specify the path to an image file as the scene map
         """
-        self._img = cv2.imread(fileName, -1)
+        self._imageIn = cv2.imread(fileName, -1)
             
         
     def openCsv(self, fileName):
@@ -161,8 +168,9 @@ class Scene():
                 break
         if pedNum > 0:
             print('Num of peds: ' + str(pedNum))
-        
-        # Loop over all pedestrians in peds
+            
+        self.pedList[timestep] = curPeds
+        # Loop over all pedestrians in curPeds
         for id in list(curPeds):
             ped = self.peds[id]
             # Calculate features
@@ -174,15 +182,17 @@ class Scene():
         else:
             return True
             
-    def renderScene(self, waitTime = 25):
+    def renderScene(self, timestep = -1, waitTime = 25):
         ''' Create an image object to visualize what's going on.
         '''
-        img2 = self._img.copy()
-        for id, ped in self.peds.items():
-            cv2.circle(img2, center = (ped._xPix, ped._yPix), radius = ped._rPix,
-                       color = (0, 255, 0), thickness = -1)
-        cv2.imshow('image',img2)
-        #cv2.imwrite('output.png',img2)
+        if timestep == -1:
+            timestep = self.getTimestep()
+            
+        self._imageOut = self._imageIn.copy()
+        for id, ped in self.pedList[timestep].items():
+            ped.draw(self._imageOut)
+        cv2.imshow('image',self._imageOut)
+        #cv2.imwrite('output.png',self._imageOut)
         cv2.waitKey(waitTime)
 
         

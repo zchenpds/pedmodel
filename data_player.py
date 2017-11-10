@@ -14,15 +14,19 @@ sc = Scene()
 sc.addMap('scene_map.png')
 sc.openCsv('atc-20121114.csv')
 #sc.openCsv('test.csv')
-sc.setRoi(np.float32([[1076, 254]]), 700, 110, 42.7, show = True)
+sc.setRoi(np.float32([[1076, 254]]), 700, 110, 42.7, show = False)
 
+'''
 sc.readNextFrame()
 sc.renderScene(15000) # Let the window live for a certain time in millisecs
-
-
-'''
-while sc.readNextFrame(): 
-    sc.renderScene(1)
 '''
 
-sc.deallocate()
+try:
+    while sc.readNextFrame(): 
+        sc.renderScene(waitTime = 1)
+except KeyboardInterrupt:
+    sc.deallocate()
+except:
+    sc.deallocate()
+    raise
+

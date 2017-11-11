@@ -12,15 +12,17 @@ import math
 from collections import OrderedDict
 
 from pedestrian import Pedestrian
+import sys
 
 class Scene():
     def __init__(self):
         """ Initializer
         """
-        self._ind = 0
-        self._timestep = -1 # indicating that no data is available yet
+        self._index = -1 # the previous row that has been read in
+        self._chunkEndIndex = -1 # the end index of the chunk currently being processed
+        self._chunksize = 10 ** 6
+        self._timestep = -1 # the previous timestep available
         self._headers = ["time_stamp","ped_id","x","y","z","vel","ang_m","ang_f"]
-        # ped_list
         self.peds = dict()
         self.pedList = OrderedDict()
         self._imageIn = None
@@ -28,6 +30,7 @@ class Scene():
         self._M = None # affine transform in millimeters
         self._wRoi = None # ROI width in millimeters
         self._hRoi = None # ROI height in millimeters
+        self._csvReader = None
         
         # Exit handler (This fixes the window freezing bug)
         # atexit.register(self.deallocate)
@@ -90,15 +93,15 @@ class Scene():
         '''
         if self._M is None:
             return True
-        x = dataEntry.loc[0, 'x']
-        y = dataEntry.loc[0, 'y']
+        x = dataEntry.at['x']
+        y = dataEntry.at['y']
         p = np.float32([[x, y]])
         p = np.dot(self._M[:, 0:2], p.transpose())  + self._M[:, 2:]
         # print(p)
         x = p[0]
         y = p[1]
-        dataEntry.loc[0, 'x'] = x
-        dataEntry.loc[0, 'y'] = y
+        dataEntry.at['x'] = x
+        dataEntry.at['y'] = y
         if x > 0 and x < self._wRoi and y > 0 and y < self._hRoi:
             return True # indicates this pedestrian is in ROI
         else:
@@ -114,22 +117,27 @@ class Scene():
     def openCsv(self, fileName):
         """ specify the path to a csv file where pedestrian data is stored.
         """
-        self._csvFileName = fileName
+        self._csvReader = pd.read_csv(fileName, iterator = True,
+                                      names = self._headers)
+        self._dataFrame = None
         
-    def readNextFrame(self):
+    def readNextRow(self):
         """ read in pedestrian data of the next time step.
         """
+        
+        if self._csvReader == None:
+            sys.exit("No CSV file is opened.")
+        
         self._timestep = self._timestep + 1
         timestep = self._timestep
         # read in one row of data
-        dataEntry = pd.read_csv(self._csvFileName, 
-                                          names = self._headers, 
-                                          skiprows = self._ind, nrows = 1)
+        dataEntry = self._readNextRow()
+        
         if timestep == 0:
-            self.timebase = dataEntry['time_stamp'][0]
+            self.timebase = dataEntry.at['time_stamp']
         
         # self.time is relative to the first timestamp in csv
-        self.time = dataEntry['time_stamp'][0] - self.timebase
+        self.time = dataEntry.at['time_stamp'] - self.timebase
         print('Time: ' + str(self.time) + 's')
         
         # Loop over rows of data from the csv file
@@ -137,10 +145,10 @@ class Scene():
         curPeds = dict() # List of peds in this frame
         while True:
             # add the new entry to curPeds
-            id = dataEntry['ped_id'][0]
+            id = dataEntry.at['ped_id']
             # Check if this pedestrian is in the ROI
             # In _transformAndCrop, dataEntry will be changed
-            isInRoi = self._transformAndCrop(dataEntry) #########################
+            isInRoi = self._transformAndCrop(dataEntry) 
             if id in self.peds:
                 # This pedestrian already exists in peds, so update it
                 self.peds[id].update(dataEntry)
@@ -156,15 +164,13 @@ class Scene():
             dataEntry_1 = dataEntry
             
             # read the next row
-            self._ind = self._ind + 1
-            dataEntry = pd.read_csv(self._csvFileName, 
-                                              names = self._headers, 
-                                              skiprows = self._ind, nrows = 1)
+            dataEntry = self._readNextRow()
+            
             # If EOF is reached, jump out of the loop
             if dataEntry.empty:
                 break
             # If the next row has a different timestamp, jump out of the loop
-            if dataEntry_1.values[0, 0] != dataEntry.values[0, 0]:
+            if dataEntry_1.at['time_stamp'] != dataEntry.at['time_stamp']:
                 break
         if pedNum > 0:
             print('Num of peds: ' + str(pedNum))
@@ -181,6 +187,13 @@ class Scene():
             return False # EOF has been reached
         else:
             return True
+    
+    def _readNextRow(self):
+        if self._index ==  self._chunkEndIndex:
+            self._dataFrame = self._csvReader.get_chunk(self._chunksize)
+            self._chunkEndIndex += self._chunksize
+        self._index += 1
+        return self._dataFrame.loc[self._index]
             
     def renderScene(self, timestep = -1, waitTime = 25):
         ''' Create an image object to visualize what's going on.

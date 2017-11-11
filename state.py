@@ -11,17 +11,16 @@ class State:
     def __init__(self, dataEntry, ped):
         ''' Constructor
         '''
-        self.data = dataEntry # not in use for now
         self._timestep = ped._scene.getTimestep()
         self.time = ped._scene.time
-        self.id = dataEntry.loc[0, 'ped_id']
+        self.id = dataEntry.at['ped_id']
         # Update current position
-        self.pos = np.array([[self.data.loc[0, 'x'],
-                             self.data.loc[0, 'y']]])
-        self.zHeight = dataEntry.loc[0, 'z']
-        self.vel = dataEntry.loc[0, 'vel']
-        self.angM = dataEntry.loc[0, 'ang_m'] # not rotated yet
-        self.angF = dataEntry.loc[0, 'ang_f'] # not rotated yet
+        self.pos = np.array([[dataEntry.at['x'],
+                             dataEntry.at['y']]])
+        self.zHeight = dataEntry.at['z']
+        self.vel = dataEntry.at['vel']
+        self.angM = dataEntry.at['ang_m'] # not rotated yet
+        self.angF = dataEntry.at['ang_f'] # not rotated yet
         
         # Upon initialization, _neighbors will still be empty
         self.neighborStates = dict()

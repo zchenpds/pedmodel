@@ -4,7 +4,6 @@ Author: Mfahad
 """
 import numpy as np
 import cv2
-from interpolated_trajectory import Interpolated
 from feature import Feature
 from state import State
 from collections import OrderedDict
@@ -52,8 +51,7 @@ class Pedestrian():
     def _update(self, dataEntry):
         ''' Update self
         '''
-        self.data = dataEntry # obsolete
-        self.id = dataEntry.loc[0, 'ped_id']
+        self.id = dataEntry.at['ped_id']
         
         # Update states
         timestep = self._scene.getTimestep()
@@ -63,10 +61,6 @@ class Pedestrian():
         if (timestep - 1) in self.states:
             self.states[timestep - 1].updateInterState(self.states[timestep])
         #self.interStates[timestep]
-        
-        # Update current position # obsolete
-        #self.pos = np.array([[dataEntry.loc[0, 'x'], # obsolete
-        #                     dataEntry.loc[0, 'y']]]) # obsolete
     
         #print(self.pos.shape)
         
@@ -77,25 +71,6 @@ class Pedestrian():
         
         # Update trajectories, each denoted by an n-by-2 array 
         # self.points = np.concatenate((self.points, self.pos), axis = 0) 
-        
-        # Generate interpolated trajectory
-        self.inter_traj = np.concatenate(
-                (self.inter_traj, 
-                 np.array([[self.xPix(), self.yPix()]])), 
-                axis = 0)
-
-        #print self.inter_traj.shape
-        #interploate the trajectory between last position and current position
-        #self.inter_traj = np.concatenate(Interpolated(self.inter_traj[len(self.inter_traj)-2],self.inter_traj[len(self.inter_traj)-2]
-        #,self.inter_traj[len(self.inter_traj)-1],self.inter_traj[len(self.inter_traj)-1]))
-
-
-        # Update other states of the pedestrian
-        #self.zHeight = dataEntry.loc[0, 'z'] # obsolete
-        #self.vel = dataEntry.loc[0, 'vel'] # obsolete
-        #self.angM = dataEntry.loc[0, 'ang_m'] # obsolete
-        #self.angF = dataEntry.loc[0, 'ang_f'] # obsolete
-        
         
     def draw(self, image):
         timestep = self._scene.getTimestep()

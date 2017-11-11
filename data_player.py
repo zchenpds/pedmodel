@@ -22,8 +22,8 @@ sc.renderScene(15000) # Let the window live for a certain time in millisecs
 '''
 
 try:
-    while sc.readNextFrame(): 
-        sc.renderScene(waitTime = 1)
+    while sc.readNextRow(): 
+        pass#sc.renderScene(waitTime = 1)
 except KeyboardInterrupt:
     sc.deallocate()
 except:

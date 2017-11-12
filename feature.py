@@ -13,33 +13,35 @@ class Feature():
         ''' construct the feature vector from a state object
         state: self state
         '''
+
         self.radius = 5000 #radius of influence around pedestrian
         self.close_dis = 3000
         
-        self.phi_sam = np.zeros(1,10)#Whether each SAM bin has velocity or not
-        self.phi_sam_vel = np.zeros(1,10)#SAM bin velocity
-        self.phi_sam_vel_bin = np.zeros(1,30)#SAM velocity bins
-        self.phi_rel_vel_ang = np.zeros(1,3)#relative velocity bin
-        self.phi_rel_vel_mag = np.zeros(1,3)#relative velocity magnitude
-        self.phi_rel_vel_bin = np.zeros(1,9)#relative velocity bins
+        self.phi_sam = np.zeros((10,))#Whether each SAM bin has velocity or not
+        self.phi_sam_vel = np.zeros((10,))#SAM bin velocity
+        self.phi_sam_vel_bin = np.zeros((30,))#SAM velocity bins
+        self.phi_rel_vel_ang = np.zeros((3,))#relative velocity bin
+        self.phi_rel_vel_mag = np.zeros((3,))#relative velocity magnitude
+        self.phi_rel_vel_bin = np.zeros((9,))#relative velocity bins
+        self.within_radius = 0#number of pedestrians within self.radius
         
         
         pos = state.pos#position of the current pedestrian (numpy 1X2 array in mm)
         
-        for id, neighborState in State.neighborStates.items():
+        for id, neighborState in state.neighborStates.items():
             neighborPos = neighborState.pos#position of the neighbors (numpy 1X2 array in mm)
             self.within_radius+=self._density(pos,neighborPos)
-            self.sam (state, neighborState)#generate SAM velocities
-            self.rel_pos = self.rel_pos_cal(pos,neighborPos)#calculate relative position
-            self.rel_vel = self.rel_vel_cal(state, neighborState)#calculate relative position
+            self._sam(state, neighborState)#generate SAM velocities
+            self.rel_pos = self._rel_pos_cal(pos,neighborPos)#calculate relative position
+            self.rel_vel = self._rel_vel_cal(state, neighborState)#calculate relative position
             self.ang_bet = self._angle_between(self.rel_pos,self.rel_vel)#angle between position vector and velocity vector
             self._rel_vel_val(self.ang_bet,self.rel_vel)
 
 
         self.phi_d = self._density_descretize()#generate the final denisty feature
-        self.sam_vel_des() #generate the final sam feature
+        self._sam_vel_des() #generate the final sam feature
         self._rel_vel_dis() #generate the final relative velocity feature
-        return self.phi_d,self.phi_sam,self.phi_sam_vel_bin,self.phi_rel_vel_ang,self.phi_rel_vel_bin
+        #return self.phi_d,self.phi_sam,self.phi_sam_vel_bin,self.phi_rel_vel_ang,self.phi_rel_vel_bin
 
     def _rel_vel_dis(self):#function to discretize relative velocity
         
@@ -90,13 +92,14 @@ class Feature():
 
 
     def _rel_pos_cal(self, pos, ne_pos):#function to calculate relative position vector
-        return [pos[0]-ne_pos[0],pos[1]-ne_pos[1]]
+        return [pos[0,0]-ne_pos[0,0],pos[0,1]-ne_pos[0,1]]
 
     def _rel_vel_cal(self, state, neighborState):#function to calculate relative velocity vector
         return [state.vel*math.cos(state.angM)-neighborState.vel*math.cos(neighborState.angM),state.vel*math.sin(state.angM)-neighborState.vel*math.sin(neighborState.angM)]
         
     def _density(self, pos, ne_pos):#function to check if a neighbor is within the desired radius or not
-        dis = math.sqrt(math.pow(pos[0]-ne_pos[0],2)+math.pow(pos[1]-ne_pos[1],2))
+
+        dis = math.sqrt(math.pow(pos[0,0]-ne_pos[0,0],2)+math.pow(pos[0,1]-ne_pos[0,1],2))#Calculate the distance from neighboring pedestrian. 
         if dis<self.radius:
             return 1
         else:
@@ -113,12 +116,12 @@ class Feature():
         elif (self.within_radius>5):
             return [0,0,1]
         
-    def _sam (self, state_ped, state_neighbor):#function to calculate the average velocity of each SAM feature
+    def _sam(self, state_ped, state_neighbor):#function to calculate the average velocity of each SAM feature
         
         dir_ped = (math.cos(state_ped.angM),math.sin(state_ped.angM))
         dir_neb = (math.cos(state_neighbor.angM),math.sin(state_neighbor.angM))
         ang = self._angle_between(dir_ped, dir_neb)
-        dis = math.sqrt(math.pow(state_ped.pos[0]-state_neighbor.pos[0],2)+math.pow(state_ped.pos[1]-state_neighbor.pos[1],2))
+        dis = math.sqrt(math.pow(state_ped.pos[0,0]-state_neighbor.pos[0,0],2)+math.pow(state_ped.pos[0,1]-state_neighbor.pos[0,1],2))
 
         if ((ang<=math.pi/3) and (ang>=-1*math.pi/3)and (dis<=self.close_dis)):#bin 1
             self.phi_sam[0]=1

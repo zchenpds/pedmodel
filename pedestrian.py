@@ -44,8 +44,8 @@ class Pedestrian():
         self.states[timestep].updateNeighbors(curPeds)
         
         # Update features
-        state = self.states[timestep]
-        self.features[timestep] = Feature(state, timestep)
+        #state = self.states[timestep]
+        #self.features[timestep] = Feature(state, timestep)
             
             
     def _update(self, dataEntry):
@@ -74,7 +74,7 @@ class Pedestrian():
         
     def draw(self, image):
         timestep = self._scene.getTimestep()
-        if timestep in self.states:
+        if False: #timestep in self.states:
             cv2.circle(image, 
                        center = (self.xPix(timestep), self.yPix(timestep)), 
                        radius = self._rPix, 

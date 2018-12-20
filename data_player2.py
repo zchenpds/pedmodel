@@ -11,12 +11,12 @@ from scene import Scene
 import numpy as np
 
 sc = Scene()
-#sc.addMap('scene_map.png')
-sc.addMap('fahad0.png')
-sc.openCsv('atc-20121114.csv')
+sc.addMap('scene_map.png')
+#sc.addMap('fahad1.png')
+#sc.openCsv('atc-20121114.csv')
 #sc.openCsv('test.csv')
-#sc.setRoi(np.float32([[1076, 254]]), 700, 110, 42.7, show = False)
-sc.setRoi(np.float32([[0, 0]]), 1200, 2800, 90, show = False)
+sc.setRoi(np.float32([[1076, 254]]), 700, 110, 42.7, show = True)
+#sc.setRoi(np.float32([[0, 0]]), 1200, 2800, 90, show = False)
 
 '''
 sc.readNextFrame()

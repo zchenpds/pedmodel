@@ -50,14 +50,17 @@ class Scene():
         p1Pix = oPix + vec1 * wPix
         p2Pix = oPix + vec2 * hPix
         if show:
+            color = (255, 255, 255)
+            width = 3
             p3Pix = oPix + vec1 * wPix + vec2 * hPix # for debug
-            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p3Pix[0]), (0, 0, 255))
-            cv2.line(self._imageIn, tuple(p1Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p1Pix[0]), (0, 0, 255))
-            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p2Pix[0]), (0, 0, 255))
-            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p1Pix[0]), (0, 0, 255))
-            cv2.imshow('img', self._imageIn)
+            #cv2.line(self._imageIn, tuple(oPix[0]), tuple(p3Pix[0]), color， width)
+            #cv2.line(self._imageIn, tuple(p1Pix[0]), tuple(p2Pix[0]), color， width)
+            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p1Pix[0]), color, width)
+            cv2.line(self._imageIn, tuple(oPix[0]), tuple(p2Pix[0]), color, width)
+            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p2Pix[0]), color, width)
+            cv2.line(self._imageIn, tuple(p3Pix[0]), tuple(p1Pix[0]), color, width)
+            cv2.imwrite('output.png',self._imageIn)
+            #cv2.imshow('img', self._imageIn)
         pts1 = np.concatenate((oPix, p1Pix, p2Pix))
         pts2 = np.float32([[0, 0], [wPix, 0], [0, hPix]])
         M = cv2.getAffineTransform(pts1, pts2) 
@@ -142,7 +145,7 @@ class Scene():
         
         # Loop over rows of data from the csv file
         pedNum = 0 # Num of peds in this frame
-        curPeds = dict() # List of peds in this frame
+        curPeds = dict()
         while True:
             # add the new entry to curPeds
             id = dataEntry.at['ped_id']
@@ -195,19 +198,22 @@ class Scene():
         self._index += 1
         return self._dataFrame.loc[self._index]
             
-    def renderScene(self, timestep = -1, waitTime = 25):
+    def renderScene(self, timestep = -1, waitTime = 25, write = False, show = True):
         ''' Create an image object to visualize what's going on.
         '''
         if timestep == -1:
             timestep = self.getTimestep()
+            self._imageOut = self._imageIn.copy()
             
-        self._imageOut = self._imageIn.copy()
+        #self._imageOut = self._imageIn.copy()
         for id, ped in self.pedList[timestep].items():
-            ped.draw(self._imageOut)
-        cv2.imshow('image',self._imageOut)
-        #cv2.imwrite('output.png',self._imageOut)
-        cv2.waitKey(waitTime)
-
+            ped.draw(self._imageIn)
+        if write == True:
+            cv2.imwrite('output.png',self._imageIn)
+        if show == True:
+            cv2.imshow('image',self._imageIn)
+            cv2.waitKey(waitTime)
+        
         
     def deallocate(self):
         cv2.destroyAllWindows() # Add this to fix the window freezing bug

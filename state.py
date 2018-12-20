@@ -65,7 +65,13 @@ class InterState():
     def draw(self, image):
         for i in range(len(self.traj)):
             #print(self.traj[i])
-            if (self.traj[i][1] in range(image.shape[0]) and 
-                self.traj[i][0] in range(image.shape[1])):
-                image[self.traj[i][1], self.traj[i][0]] = np.uint8([0, 255, 0])
+            x = self.traj[i][0]
+            y = self.traj[i][1]
+            if (y in range(image.shape[0] - 1) and 
+                x in range(image.shape[1] - 1)):
+                image[y, x] = np.uint8([0, 255, 0])
+                image[y+1, x] = np.uint8([0, 255, 0])
+                image[y, x+1] = np.uint8([0, 255, 0])
+                image[y+1, x+1] = np.uint8([0, 255, 0])
+                
     
